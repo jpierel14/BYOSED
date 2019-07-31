@@ -279,7 +279,9 @@ effects in the following way:
 
 .. math::
 	
-	F(\lambda,\phi)=A\times H(\lambda,\phi)\Big[1+SN_1(\theta_{SN})s_1G_1(\theta_{SN},\theta_{HOST})+SN_2(\theta_{SN})s_2G_2(\theta_{SN},\theta_{HOST})+...+SN_N(\theta_{SN})s_NG_N(\theta_{SN},\theta_{HOST})\Big]
+	F(\lambda,\phi)=A\times H(\lambda,\phi)\Big[1+SN_1(\theta_{SN})s_1G_1(\theta_{SN},\theta_{HOST})+SN_2(\theta_{SN})s_2G_2(\theta_{SN},\theta_{HOST})+...
+
+		+SN_N(\theta_{SN})s_NG_N(\theta_{SN},\theta_{HOST})\Big]
 
 Example Files
 =============

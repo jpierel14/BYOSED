@@ -21,7 +21,7 @@ __all__ = ['GeneralSED','WarpModel']
 
 class GeneralSED:
 
-	def __init__(self,PATH_VERSION=os.path.join(os.path.abspath(__file__),'initfiles'),
+	def __init__(self,PATH_VERSION=os.path.join(os.path.dirname(os.path.abspath(__file__)),'initfiles','BYOSED.params'),
 				 OPTMASK=2,ARGLIST='',HOST_PARAM_NAMES=''):
 		#print('LIST: ',OPTMASK)
 		#print('HOST_PARAM_NAMES: ',HOST_PARAM_NAMES)
@@ -195,7 +195,9 @@ class GeneralSED:
 	def fetchSED_LAM(self):
 		return list(self.wave)
 
-	def warp_SED(self,trest,hostpars=None):
+	def warp_SED(self,trest=None,hostpars=None):
+		if trest is None:
+			trest=self.phase
 		if hostpars is not None:
 			self.host_param_names = ','.join(list(hostpars.keys()))
 			hostpar_vals = ','.join(list(hostpars.values()))

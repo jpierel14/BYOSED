@@ -8,10 +8,10 @@
 import byosed
 
 #sys.exit()
-mySED=byosed.GeneralSED('$WFIRST_ROOT/BYOSED_dev/BYOSEDINPUT/',1,[],'HOST_MASS,SFR,AGE,REDSHIFT,METALLICITY')
+mySED=byosed.GeneralSED(OPTMASK=1,ARGLIST=[],HOST_PARAM_NAMES='HOST_MASS,SFR,AGE,REDSHIFT,METALLICITY')
 #byosed.plot_sed(mySED,effect='STRETCH')
 flux = mySED.warp_SED(mySED.phase)
-mod = mySED.create_sn_model(mySED)
+mod = mySED.to_sn_model()
 
 print(mod.bandflux('bessellv',0))
 
