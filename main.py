@@ -7,9 +7,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import byosed
+
 #sys.exit()
-mySED=byosed.GeneralSED('$WFIRST_ROOT/BYOSED_dev/BYOSEDINPUT/',2,[],'HOST_MASS,SFR,AGE,REDSHIFT,METALLICITY')
-byosed.plot_sed(mySED,effect='STRETCH')
+mySED=byosed.GeneralSED('$WFIRST_ROOT/BYOSED_dev/BYOSEDINPUT/',1,[],'HOST_MASS,SFR,AGE,REDSHIFT,METALLICITY')
+#byosed.plot_sed(mySED,effect='STRETCH')
+mySED.warp_SED(mySED.phase)
+mod = mySED.create_sn_model(mySED)
+
+print(mod.bandflux('bessellv',0))
+
 #print(mySED.fetchParNames_BYOSED())
 #mySED.fetchSED_BYOSED(0,5000,3,2,[2.5,1,1,.5])
 

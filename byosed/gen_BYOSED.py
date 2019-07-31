@@ -1,5 +1,7 @@
-import numpy as np	
-import os, optparse, configparser, sys
+import numpy as np
+import matplotlib.pyplot as plt
+
+import os, optparse, configparser, sys, sncosmo
 from scipy.interpolate import interp2d
 from copy import copy
 
@@ -13,7 +15,7 @@ required_keys = ['magsmear']
 
 
 __mask_bit_locations__={'verbose':1,'dump':2}
-__all__ = ['GeneralSED']
+__all__ = ['GeneralSED','WarpModel']
 
 
 class GeneralSED:
@@ -70,7 +72,7 @@ class GeneralSED:
 		self.wavelen = len(self.wave)
 
 		self.sedInterp=interp2d(self.phase,self.wave,self.flux.T,kind='linear',bounds_error=True)
-		print(self.warp_effects)
+
 
 		return
 
@@ -140,7 +142,7 @@ class GeneralSED:
 				if warp.upper() in sn_param_names and warp_parameter is None:
 					raise RuntimeError("Woops, you are not providing a PARAM distribution for your %s effect."%warp.upper())
 
-				sn_dict[warp]=warpModel(warp_function=sn_function,
+				sn_dict[warp]=WarpModel(warp_function=sn_function,
 										param_names=sn_param_names,
 										parameters=np.array([0. if sn_param_names[i]!=warp.upper() else warp_parameter for i in range(len(sn_param_names))]),
 										warp_parameter=warp_parameter,
@@ -166,7 +168,7 @@ class GeneralSED:
 				warp_parameter=distribution['PARAM']()[0] if 'PARAM' in distribution.keys() else None
 				if warp.upper() in host_param_names and warp_parameter is None and warp.upper() not in self.host_param_names:
 					raise RuntimeError("Woops, you are not providing a PARAM distribution for your %s effect."%warp.upper())
-				host_dict[warp]=warpModel(warp_function=host_function,
+				host_dict[warp]=WarpModel(warp_function=host_function,
 										  param_names=host_param_names,
 										  parameters=np.array([0. if host_param_names[i]!=warp.upper() else warp_parameter for i in range(len(host_param_names))]),
 
@@ -192,8 +194,25 @@ class GeneralSED:
 	def fetchSED_LAM(self):
 		return list(self.wave)
 
+	def warp_SED(self,trest,hostpars=None):
+		if hostpars is not None:
+			self.host_param_names = ','.join(list(hostpars.keys()))
+			hostpar_vals = ','.join(list(hostpars.values()))
+		else:
+			hostpar_vals = ''
+		warped_flux = []
+		for p in trest:
+			warped_flux=np.append(warped_flux,self.fetchSED_BYOSED(p,hostpars=hostpar_vals))
 
-	def fetchSED_BYOSED(self,trest,maxlam,external_id,new_event,hostpars):
+		self.warped_phase = trest
+		self.warped_wave = self.wave
+		self.warped_flux = warped_flux.reshape([len(self.warped_phase),len(self.warped_wave)])
+
+		self.warpedSED_Interp=interp2d(self.warped_phase,self.warped_wave,self.warped_flux.T,kind='linear',bounds_error=True)
+
+		return (self.warped_flux)
+
+	def fetchSED_BYOSED(self,trest,maxlam=5000,external_id=1,new_event=1,hostpars=''):
 		if len(self.wave)>maxlam:
 			raise RuntimeError("Your wavelength array cannot be larger than %i but is %i"%(maxlam,len(self.wave)))
 		#iPhase = np.where(np.abs(trest-self.phase) == np.min(np.abs(trest-self.phase)))[0][0]
@@ -204,6 +223,7 @@ class GeneralSED:
 		orig_fluxsmear=copy(fluxsmear)
 		if self.options.magsmear!=0.0:
 			fluxsmear *= 10**(0.4*(np.random.normal(0,self.options.magsmear)))
+
 		trest_arr=trest*np.ones(len(self.wave))
 
 		for warp in [x for x in self.warp_effects]:# if x!='COLOR']:
@@ -253,17 +273,72 @@ class GeneralSED:
 			except RuntimeError:
 				import pdb; pdb.set_trace()
 
-
-		# if 'COLOR' in self.warp_effects:
-		# 		if external_id!=self.sn_id:
-		# 				self.sn_effects['COLOR'].updateWarping_Params()
-		# 				self.sn_id=external_id
-		# 		if self.verbose:
-		# 				print('Phase=%.1f, %s: %.2f'%(trest,'COLOR',self.sn_effects['COLOR'].warp_parameter))
-		# 		fluxsmear*=10**(-0.4*self.sn_effects['COLOR'].warp_parameter*\
-		# 				self.sn_effects['COLOR'].flux(trest_arr,self.wave,hostpars,self.host_param_names).flatten())
-
 		return list(fluxsmear)
+
+	def to_sn_model(self):
+		try:
+			source = sncosmo.TimeSeriesSource(self.warped_phase,self.warped_wave,self.warped_flux)
+		except:
+			print("Could not create sncosmo model, have you created warped data yet?")
+		self.sn_model = sncosmo.Model(source)
+		return(self.sn_model)
+
+	def plot_sed(self,effect=None,host_param_bounds=None):
+		leg_sym='$x_1$'
+		# effect='SFR'
+		# param_bounds=[.01,5]
+		# leg_sym='z'
+		# effect='METALLICITY'
+		# param_bounds=[.01,10]
+		# leg_sym='Z'
+		fig,ax=plt.subplots(nrows=3,ncols=3,figsize=(15,15),sharex=True)
+		phases=np.arange(-10,31,5)
+		k=0
+
+		base_params=[9,1,1,.001,1]
+		for i in range(3):
+			for j in range(3):
+				if effect is not None:
+
+					if self.sn_effects[effect].warp_parameter is None:
+						self.sn_effects[effect].scale_parameter=0
+					else:
+						self.host_effects[effect].warp_parameter=0
+					ax[i][j].plot(self.wave,self.fetchSED_BYOSED(phases[k],5000,3,3,base_params),label='Baseline',color='k',linewidth=2)
+
+					for p in range(3):
+						if effect in self.host_effects.keys():
+							if host_param_bounds is None:
+								raise RuntimeError("Please provide bounds for Host parameter, used in effect %s"%effect)
+							self.host_effects[effect].updateWarp_Param()
+							v=np.random.uniform(host_param_bounds[0],host_param_bounds[1])#gen_sed.sn_effects[effect].warp_parameter
+							#gen_sed.sn_effects['STRETCH'].updateWarp_Param()
+							#s=gen_sed.sn_effects['STRETCH'].warp_parameter
+							ax[i][j].plot(self.wave,self.fetchSED_BYOSED(phases[k],5000,3,3,
+																			   [base_params[i] if self.host_param_names[i]!=effect else v for i in range(len(base_params))]),label='%s=%.2f'%(leg_sym,v))
+
+						else:
+							if self.sn_effects[effect].warp_parameter is not None:
+								self.sn_effects[effect].scale_parameter=1.
+								self.sn_effects[effect].updateWarp_Param()
+								v=self.sn_effects[effect].warp_parameter
+							else:
+								self.sn_effects[effect].updateScale_Param()
+								v=self.sn_effects[effect].scale_parameter
+							ax[i][j].plot(self.wave,self.fetchSED_BYOSED(phases[k],5000,3,3,base_params),label='%s=%.2f'%(leg_sym,v))
+
+				ax[i][j].legend(fontsize=14)
+				ax[i][j].annotate('Phase='+str(phases[k]),(.5,.05),fontsize=14,xycoords='axes fraction')
+				ax[i][j].set_xlim((3000,9500))
+				k+=1
+				if j==0:
+					ax[i][j].set_ylabel('Flux',fontsize=16)
+				if i==2 and j==1:
+					ax[i][j].set_xlabel('Wavelength ($\AA$)',fontsize=16)
+				ax[i][j].tick_params(axis='x', labelsize=14)
+				ax[i][j].tick_params(axis='y', labelsize=14)
+
+		plt.show()#savefig('/Users/jpierel/rodney/salt3_testing/'+effect+'_byosed.pdf',format='pdf')
 
 	def fetchParNames_BYOSED(self):
 		return list(self.warp_effects)
@@ -296,7 +371,7 @@ class GeneralSED:
 			return([x for x in config.sections() if x not in ['MAIN','FLAGS']])
 
 
-class warpModel(object):
+class WarpModel(object):
 	"""Base class for anything with parameters.
 
 	Derived classes must have properties ``_param_names`` (list of str)
