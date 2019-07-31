@@ -1,3 +1,6 @@
+#general
+*~
+
 #pyCharm
 .idea
 
@@ -9,6 +12,7 @@ __pycache__/
 
 # C extensions
 *.so
+*.pyc
 
 # Distribution / packaging
 .Python
