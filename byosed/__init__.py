@@ -1,6 +1,5 @@
 from .gen_BYOSED import *
-from .effectio import *
-from .distributions import *
+from .effects import *
 
 def test(package=None, test_path=None, args=None, plugins=None,
          verbose=False, pastebin=None, remote_data=False, pep8=False,

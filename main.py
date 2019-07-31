@@ -4,14 +4,13 @@
 #sys.exit()
 #p,test=_read_ND_grids('salt2_m0.dat')
 #print(test(np.array([[10,5000],[10,6000]])))
-import matplotlib.pyplot as plt
-import numpy as np
+
 import byosed
 
 #sys.exit()
 mySED=byosed.GeneralSED('$WFIRST_ROOT/BYOSED_dev/BYOSEDINPUT/',1,[],'HOST_MASS,SFR,AGE,REDSHIFT,METALLICITY')
 #byosed.plot_sed(mySED,effect='STRETCH')
-mySED.warp_SED(mySED.phase)
+flux = mySED.warp_SED(mySED.phase)
 mod = mySED.create_sn_model(mySED)
 
 print(mod.bandflux('bessellv',0))
