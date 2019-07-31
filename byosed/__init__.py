@@ -1,7 +1,7 @@
 from .gen_BYOSED import *
 from .effectio import *
 from .distributions import *
-
+from .plotting import *
 def test(package=None, test_path=None, args=None, plugins=None,
          verbose=False, pastebin=None, remote_data=False, pep8=False,
          pdb=False, coverage=False, open_files=False, **kwargs):
