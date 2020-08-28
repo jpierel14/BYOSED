@@ -133,8 +133,10 @@ plt.plot(cw,10**(-.4*(c))*eff._flux(0,cw).flatten())
 plt.show()
 sys.exit()
 '''
+
 hp,hw,hf=sncosmo.read_griddata_ascii(os.path.join('byosed','initfiles','mangled_hsiao.dat'))
 hsiao=sncosmo.TimeSeriesSource(hp,hw,hf)
+
 
 stretched=sncosmo.StretchSource(hp,hw,hf)
 stretched.set(s=1.1)
