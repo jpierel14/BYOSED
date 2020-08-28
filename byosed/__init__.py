@@ -1,5 +1,6 @@
 from .gen_BYOSED import *
 from .effects import *
+from .effectio import *
 
 def test(package=None, test_path=None, args=None, plugins=None,
          verbose=False, pastebin=None, remote_data=False, pep8=False,

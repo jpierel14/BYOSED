@@ -11,15 +11,16 @@ MAGOFF: 0.0
 [FLAGS]
 
 COLOR: False
-STRETCH: True
+STRETCH: False
 VELOCITY: False
-SFR: False
+SFR: True
 METALLICITY: False
 HOST_MASS: False
 
 [SFR]
 
-HOST_FUNCTION: gridded_sfr.dat
+HOST_FUNCTION: gridded_ssfr_hsiao.dat
+host_param_dist_file= ssfr_dist.dat
 SCALE_DIST_PEAK: 1
 SCALE_DIST_SIGMA: .000001 .000001
 SCALE_DIST_LIMITS: .99999 1.00001
@@ -33,16 +34,17 @@ SCALE_DIST_LIMITS: .99999 1.00001
 
 [HOST_MASS]
 
-HOST_FUNCTION: gridded_mass.dat
+HOST_FUNCTION: gridded_hostmass_hsiao.dat
+host_param_dist_file= mass_dist.dat
 SCALE_DIST_PEAK: 1
 SCALE_DIST_SIGMA: .000001 .000001
 SCALE_DIST_LIMITS: .99999 1.00001
 
 [VELOCITY]
 
-SN_FUNCTION: gridded_velocity.dat
+SN_FUNCTION: gridded_velocity_hsiao.dat
 
-SN_PARAM_DIST_FILE: velocity_hist_data.txt
+SN_PARAM_DIST_FILE: velocity_hist_data.dat
 #SN_PARAM_DIST_PEAK:
 #SN_PARAM_DIST_SIGMA:
 #SN_PARAM_DIST_LIMITS
@@ -53,7 +55,7 @@ SCALE_DIST_LIMITS: .99999 1.00001
 [STRETCH]
 
 #define functions
-SN_FUNCTION: gridded_stretch.dat
+SN_FUNCTION: gridded_stretch_hsiao.dat
 
 #SN_FUNCTION_SCALE: 18971.584907771656
 
@@ -65,8 +67,8 @@ SCALE_DIST_LIMITS: -2.5 2.5
 [COLOR]
 
 #define function
-SN_FUNCTION: salt2_colorlaw.dat
-
+SN_FUNCTION: gridded_color_hsiao.dat
+scale_type=outer
 #define distribution for scale parameter
 SCALE_DIST_PEAK: 0.0
 SCALE_DIST_SIGMA: 0.07 0.1

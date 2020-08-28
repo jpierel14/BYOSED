@@ -1,3 +1,4 @@
+import scipy
 from scipy.stats import rv_continuous,gaussian_kde,norm as normal
 import numpy as np
 import os
@@ -19,7 +20,7 @@ class skewed_normal(rv_continuous):
         pdf=np.piecewise(x,[x<mu,x>=mu],
                          [lambda y : left.pdf(y)/np.max(left.pdf(y)),
                           lambda y : right.pdf(y)/np.max(right.pdf(y))])
-        return(pdf/np.sum(pdf))
+        return(pdf/scipy.integrate.simps(pdf))
 
     def _argcheck(self,*args):
         return True
