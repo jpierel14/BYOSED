@@ -16,7 +16,7 @@ required_keys = ['magsmear']
 
 
 __mask_bit_locations__={'verbose':1,'dump':2}
-__all__ = ['GeneralSED','WarpModel']
+__all__ = ['GeneralSED']
 
 
 class GeneralSED:
@@ -65,14 +65,31 @@ class GeneralSED:
 
 
 		fluxarr = flux.reshape([len(np.unique(phase)),len(np.unique(wave))])
-		self.x0=10**(.4*19.365)
-		self.flux = fluxarr*self.x0
+		self.norm =float(config['MAIN']['NORM']) if 'NORM' in config['MAIN'].keys() else -19.365
+
+		#self.x0=10**(.4*19.365)
+		self.x0=10**(-.4*self.norm)
+
+		if self.options.magsmear!=0.0:
+			self.magsmear = np.random.normal(0,self.options.magsmear)
+		else:
+			self.magsmear = 0.0
+		self.magoff=self.options.magoff
+
+		self.flux = fluxarr*self.x0*10**(-0.4*self.magoff)
 
 		self.phase = np.unique(phase)
 		self.wave = np.unique(wave)
 		self.wavelen = len(self.wave)
 
 		self.sedInterp=interp2d(self.phase,self.wave,self.flux.T,kind='linear',bounds_error=True)
+
+
+
+		#fluxsmear=self.fetchSED_BYOSED([0],5000,1,1,[0 for x in range(len(self.host_param_names))])
+		#import pickle
+		#with open('/project2/rkessler/SURVEYS/WFIRST/USERS/jpierel/byosed/fluxsmear.dat','wb') as f:
+		#	pickle.dump([self.wave,fluxsmear],f)
 
 
 		return
@@ -117,7 +134,10 @@ class GeneralSED:
 					warp_data[k.upper()]=np.array(config.get(warp,k).split()).astype(float)
 				except:
 					warp_data[k.upper()]=config.get(warp,k)
-
+			if 'SCALE_TYPE' not in warp_data.keys():
+				warp_data['SCALE_TYPE']='inner'
+			elif warp_data['SCALE_TYPE'] not in ['inner','outer']:
+				raise RuntimeError("Do not recognize variable SCALE_TYPE, should be 'inner' or 'outer'")
 
 
 
@@ -150,6 +170,7 @@ class GeneralSED:
 										warp_distribution=distribution['PARAM'] if 'PARAM' in distribution.keys() else None,
 										scale_parameter=sn_scale_parameter,
 										scale_distribution=distribution['SCALE'],
+										scale_type=warp_data['SCALE_TYPE'],
 										name=warp)
 
 			if 'HOST_FUNCTION' in warp_data:
@@ -177,6 +198,7 @@ class GeneralSED:
 										  warp_distribution=distribution['PARAM'] if 'PARAM' in distribution.keys() else None,
 										  scale_parameter=host_scale_parameter,
 										  scale_distribution=distribution['SCALE'],
+										  scale_type=warp_data['SCALE_TYPE'],
 										  name=warp)
 
 		return(sn_dict,host_dict)
@@ -195,6 +217,144 @@ class GeneralSED:
 	def fetchSED_LAM(self):
 		return list(self.wave)
 
+	def fetchSED_BYOSED(self,trest,maxlam=5000,external_id=1,new_event=1,hostpars=''):
+
+		try:
+			if len(self.wave)>maxlam:
+				raise RuntimeError("Your wavelength array cannot be larger than %i but is %i"%(maxlam,len(self.wave)))
+			#iPhase = np.where(np.abs(trest-self.phase) == np.min(np.abs(trest-self.phase)))[0][0]
+			#print('HOST_PARAMS: ',hostpars)
+			if self.sn_id is None:
+				self.sn_id=external_id
+				newSN=False
+
+			elif external_id!=self.sn_id:
+				newSN=True
+
+			else:
+				newSN=False
+
+			self.sn_id=external_id
+			fluxsmear=self.sedInterp(trest,self.wave).flatten()
+			orig_fluxsmear=copy(fluxsmear)
+
+			if self.options.magsmear!=0.0 and (self.sn_id!=external_id or self.magsmear is None):
+				self.magsmear=np.random.normal(0,self.options.magsmear)
+			else:
+				self.magsmear=0.0
+			#if self.sn_id!=external_id:
+			#	fluxsmear *= 10**(-0.4*self.magoff)
+			fluxsmear *= 10**(-0.4*(self.magsmear))
+
+			trest_arr=trest*np.ones(len(self.wave))
+
+			inner_product=np.zeros(len(self.wave))
+		except Exception as e:
+			print('Python Error :',e)
+
+
+		outer_product=np.zeros(len(self.wave))
+
+		for warp in [x for x in self.warp_effects]:# if x!='COLOR']:
+
+			try: #if True:
+
+				if newSN:
+
+					if warp in self.sn_effects.keys():
+						self.sn_effects[warp].updateWarp_Param()
+						self.sn_effects[warp].updateScale_Param()
+						if warp in self.host_effects.keys():
+							self.host_effects[warp].updateWarp_Param()
+							self.host_effects[warp].scale_parameter=1.
+
+					else:
+						self.host_effects[warp].updateWarp_Param()
+						self.host_effects[warp].updateScale_Param()
+
+				#try:
+
+				#	existing=np.loadtxt('color.dat').reshape(-1,2)
+				#	existing=np.append(existing,[hostpars[(self.host_param_names).index('ZCMB')],
+				#   self.sn_effects[warp].scale_parameter]).reshape(-1,2)
+
+				#	np.savetxt('color.dat',existing)
+				#except:
+				#	np.savetxt('color.dat',np.array([hostpars[(self.host_param_names).index('ZCMB')],
+				#	 self.sn_effects[warp].scale_parameter]).reshape(-1,2))
+
+				# not sure about the multiplication by x0 here, depends on if SNANA is messing with the
+				# absolute magnitude somewhere else
+				product=np.ones(len(self.wave))
+				temp_scale_param = 0
+				temp_outer_product=np.ones(len(self.wave))
+				outer_scale_param=0
+
+				if warp in self.sn_effects.keys():
+					if self.verbose:
+						if self.sn_effects[warp].warp_parameter is not None:
+							print('Phase=%.1f, %s: %.2f'%(trest,warp,self.sn_effects[warp].warp_parameter))
+						else:
+							print('Phase=%.1f, %s: %.2f'%(trest,warp,self.sn_effects[warp].scale_parameter))
+
+					if self.sn_effects[warp].scale_type=='inner':
+
+						product*=self.sn_effects[warp].flux(trest_arr,self.wave,hostpars,self.host_param_names)
+						if temp_scale_param ==0:
+							temp_scale_param = self.sn_effects[warp].scale_parameter
+						else:
+							temp_scale_param*=self.sn_effects[warp].scale_parameter
+
+					else:
+
+						temp_outer_product*=self.sn_effects[warp].flux(trest_arr,self.wave,hostpars,self.host_param_names)
+						if outer_scale_param ==0:
+							outer_scale_param = self.sn_effects[warp].scale_parameter
+						else:
+							outer_scale_param*=self.sn_effects[warp].scale_parameter
+
+
+				#if warp in self.sn_effects[warp]._param_names:
+				#	temp_warp_param=1.
+				#else:
+				#	temp_warp_param=self.sn_effects[warp].warp_parameter
+				if warp in self.host_effects.keys():
+					if self.verbose:
+						if self.host_effects[warp].warp_parameter is not None:
+							print('Phase=%.1f, %s: %.2f'%(trest,warp,self.host_effects[warp].warp_parameter))
+						else:
+							print('Phase=%.1f, %s: %.2f'%(trest,warp,self.host_effects[warp].scale_parameter))
+					if self.host_effects[warp].scale_type=='inner':
+						if temp_scale_param==0:
+							temp_scale_param=self.host_effects[warp].scale_parameter
+						else:
+							temp_scale_param*=self.host_effects[warp].scale_parameter
+						product*=self.host_effects[warp].flux(trest_arr,self.wave,hostpars,self.host_param_names)
+						temp_scale_param*=self.host_effects[warp].scale_parameter
+					else:
+						temp_outer_product*=self.host_effects[warp].flux(trest_arr,self.wave,hostpars,self.host_param_names)
+						if outer_scale_param==0:
+							outer_scale_param=self.host_effects[warp].scale_parameter
+						else:
+							outer_scale_param*=self.host_effects[warp].scale_parameter
+						outer_scale_param*=self.host_effects[warp].scale_parameter
+				inner_product+=product*temp_scale_param
+				outer_product+=temp_outer_product*outer_scale_param
+
+			except Exception as e:
+				print('Python Error :',e)
+
+
+
+
+
+		fluxsmear*=((1+inner_product)*10**(-0.4*outer_product))
+
+
+
+
+		return list(fluxsmear)
+
 	def warp_SED(self,trest=None,hostpars=None):
 		if trest is None:
 			trest=self.phase
@@ -204,6 +364,7 @@ class GeneralSED:
 		else:
 			hostpar_vals = ''
 		warped_flux = []
+
 		for p in trest:
 			warped_flux=np.append(warped_flux,self.fetchSED_BYOSED(p,hostpars=hostpar_vals))
 
@@ -215,68 +376,6 @@ class GeneralSED:
 
 		return (self.warped_flux)
 
-	def fetchSED_BYOSED(self,trest,maxlam=5000,external_id=1,new_event=1,hostpars=''):
-		if len(self.wave)>maxlam:
-			raise RuntimeError("Your wavelength array cannot be larger than %i but is %i"%(maxlam,len(self.wave)))
-		#iPhase = np.where(np.abs(trest-self.phase) == np.min(np.abs(trest-self.phase)))[0][0]
-		#print('HOST_PARAMS: ',hostpars)
-		if self.sn_id is None:
-			self.sn_id=external_id
-		fluxsmear=self.sedInterp(trest,self.wave).flatten()
-		orig_fluxsmear=copy(fluxsmear)
-		if self.options.magsmear!=0.0:
-			fluxsmear *= 10**(0.4*(np.random.normal(0,self.options.magsmear)))
-
-		trest_arr=trest*np.ones(len(self.wave))
-
-		for warp in [x for x in self.warp_effects]:# if x!='COLOR']:
-			try: #if True:
-
-				if external_id!=self.sn_id:
-					if warp in self.sn_effects.keys():
-						self.sn_effects[warp].updateWarp_Param()
-						self.sn_effects[warp].updateScale_Param()
-						if warp in self.host_effects.keys():
-							self.host_effects[warp].updateWarp_Param()
-							self.host_effects[warp].scale_parameter=1.
-					else:
-						self.host_effects[warp].updateWarp_Param()
-						self.host_effects[warp].updateScale_Param()
-					self.sn_id=external_id
-
-
-				# not sure about the multiplication by x0 here, depends on if SNANA is messing with the
-				# absolute magnitude somewhere else
-				product=0.
-				temp_scale_param = 1.
-				if warp in self.sn_effects.keys():
-					if self.verbose:
-						if self.sn_effects[warp].warp_parameter is not None:
-							print('Phase=%.1f, %s: %.2f'%(trest,warp,self.sn_effects[warp].warp_parameter))
-						else:
-							print('Phase=%.1f, %s: %.2f'%(trest,warp,self.sn_effects[warp].scale_parameter))
-					product+=self.sn_effects[warp].flux(trest_arr,self.wave,hostpars,self.host_param_names)
-
-					temp_scale_param*=self.sn_effects[warp].scale_parameter
-				#if warp in self.sn_effects[warp]._param_names:
-				#	temp_warp_param=1.
-				#else:
-				#	temp_warp_param=self.sn_effects[warp].warp_parameter
-				if warp in self.host_effects.keys():
-					if self.verbose:
-						if self.host_effects[warp].warp_parameter is not None:
-							print('Phase=%.1f, %s: %.2f'%(trest,warp,self.host_effects[warp].warp_parameter))
-						else:
-							print('Phase=%.1f, %s: %.2f'%(trest,warp,self.host_effects[warp].scale_parameter))
-
-					product+=self.host_effects[warp].flux(trest_arr,self.wave,hostpars,self.host_param_names)
-					temp_scale_param*=self.host_effects[warp].scale_parameter
-
-				fluxsmear*=(1.+temp_scale_param*product)
-			except RuntimeError:
-				import pdb; pdb.set_trace()
-
-		return list(fluxsmear)
 
 	def to_sn_model(self):
 		try:
