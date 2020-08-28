@@ -5,7 +5,7 @@
 #p,test=_read_ND_grids('salt2_m0.dat')
 #print(test(np.array([[10,5000],[10,6000]])))
 
-import byosed,sncosmo,sys
+import byosed,sncosmo,sys,os
 import numpy as np
 import matplotlib.pyplot as plt
 # sp,sw,sf=sncosmo.read_griddata_ascii('../salt3_testing/gridded_salt2_stretch.dat')
@@ -133,13 +133,9 @@ plt.plot(cw,10**(-.4*(c))*eff._flux(0,cw).flatten())
 plt.show()
 sys.exit()
 '''
-hsiao=sncosmo.Model('hsiao').source
-hp=hsiao._phase
-hw=hsiao._wave
-hf=hsiao._flux(hp,hw)
-plt.plot(hw,hf[0,:])
-plt.show()
-sys.exit()
+hp,hw,hf=sncosmo.read_griddata_ascii(os.path.join('byosed','initfiles','mangled_hsiao.dat'))
+hsiao=sncosmo.TimeSeriesSource(hp,hw,hf)
+
 stretched=sncosmo.StretchSource(hp,hw,hf)
 stretched.set(s=1.1)
 
@@ -151,7 +147,7 @@ byosed.sed_to_effect(stretched,hsiao,rescale=False,effect_var='stretch',outname=
 #plt.plot(hp,sncosmo.Model(hsiao).bandflux('bessellb',hp))
 #plt.show()
 import os
-hsiao=sncosmo.Model('hsiao').source
+#hsiao=sncosmo.Model('hsiao').source
 base_repo='/usr/local/WFIRST/ROOT/BYOSED_dev/BYOSEDINPUT'
 data_repos=['SALT3_velocity_templates/SALT3_velocity_templates_werrors','SALT3_hostmass','ssfr_composites']
 effect_keys=[['highv','lowv'],['lowmass','highmass'],['low','high']]
@@ -160,7 +156,7 @@ eff_vals=[[[-30,-11.0001],[-11,0]],[[0,10.7],[10.7001,30]],[[-17,-10.7],[-10.699
 for i in range(len(data_repos)):
     repo=os.path.join(base_repo,data_repos[i])
     seds=byosed.kaepora_to_sed(repo,
-                      effect_keys[i],base_sed='hsiao',minWave=3500,maxWave=9000,minPhase=-np.inf,
+                      effect_keys[i],base_sed=sncosmo.Model(hsiao),minWave=3000,maxWave=9000,minPhase=-np.inf,
                maxPhase=np.inf,waveStep=10,scale_band='bessellr')
 
     eff_dict={}

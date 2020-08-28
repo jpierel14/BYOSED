@@ -52,6 +52,7 @@ def kaepora_to_sed(data_folder,effect_keys,base_sed='hsiao',minWave=0,maxWave=np
         if len(np.unique(temp_phase))!=len(temp_phase):
             print('You have more than one file for at least one phase.')
             sys.exit(1)
+
         low_w=np.max(temp_min_wave)
         high_w=np.min(temp_max_wave)
         final_wavelength=np.arange(low_w,high_w+waveStep/10,waveStep)
