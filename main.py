@@ -138,6 +138,7 @@ hp=hsiao._phase
 hw=hsiao._wave
 hf=hsiao._flux(hp,hw)
 
+
 stretched=sncosmo.StretchSource(hp,hw,hf)
 stretched.set(s=1.1)
 
