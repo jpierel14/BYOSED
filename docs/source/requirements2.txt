@@ -1,0 +1,8 @@
+numpy
+scipy
+astropy
+pytest-astropy
+pandas
+matplotlib
+sncosmo
+sphinx_gallery

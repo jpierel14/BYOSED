@@ -1,3 +1,4 @@
+import os
 from setuptools.command.test import test as TestCommand
 from distutils.core import setup
 import numpy.distutils.misc_util
@@ -16,7 +17,7 @@ class BYOSEDTest(TestCommand):
 
 AUTHOR = 'Justin Pierel'
 AUTHOR_EMAIL = 'jr23@email.sc.edu'
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 LICENSE = 'BSD'
 URL = 'byosed.readthedocs.org'
 

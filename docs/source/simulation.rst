@@ -13,7 +13,7 @@ Param File Basics
 =================
 
 The only file to set up is the BYOSED.params file. This contains the general aspects
-of the simulated SN you want to create using BYOSED, and any warping effects you
+of the simulated SN you want to create using BYOSED, and any warping perturbers you
 want to add in. This file is separated into the following required and optional sections:
 
 [MAIN]
@@ -38,9 +38,9 @@ like the following:
 -------
 **(Optional)**
 
-This section allows you to simply turn warping effects defined in the next section(s) on and off. If
-this section exists, then it supersedes later sections and defines the warping effects to be used. 
-If it does not exist, all defined warping effects are used. Adding this onto the **[MAIN]** section,
+This section allows you to simply turn warping perturbers defined in the next section(s) on and off. If
+this section exists, then it supersedes later sections and defines the warping perturbers to be used. 
+If it does not exist, all defined warping perturbers are used. Adding this onto the **[MAIN]** section,
 the params file might now look like the following:
 
 ::
@@ -59,16 +59,16 @@ the params file might now look like the following:
 
 
 In this case, a magnitude smearing of 0.1 would be applied to the Hsiao model at all wavelengths,
-and some host mass and stretch effects are applied as well based on functions you will 
+and some host mass and stretch perturbers are applied as well based on functions you will 
 define in the next sections. 
 
-Warping Effects
+Warping Perturbers
 ===============
 
-The following sections contain all of the various wavelength/phase dependent effects that you want
+The following sections contain all of the various wavelength/phase dependent perturbers that you want
 to apply to your SED. In this case, based on the **[FLAGS]** section, you must have a "HOST_MASS" section
-and a "STRETCH" section. You can name effects whatever you want, as long as the name of your section and the corresponding
-name in the **[FLAGS]** section are identical. Effects are either **"HOST"** effects, or they are **"SN"** effects.
+and a "STRETCH" section. You can name perturbers whatever you want, as long as the name of your section and the corresponding
+name in the **[FLAGS]** section are identical. Perturbers are either **"HOST"** perturbers, or they are **"SN"** perturbers.
 They both require the same basic variables, but have different names. In all cases, you will have the following variables
 defined:
 
@@ -79,10 +79,10 @@ defined:
 3. SCALE_DIST_LIMITS
   	* The lower and upper cutoff you would like for the same distribution 
 
-HOST Effects
+HOST Perturbers
 ============
 
-Creating a HOST warping effect section requires the following
+Creating a HOST warping perturber section requires the following
 variable:
 
 HOST_FUNCTION
@@ -115,20 +115,20 @@ OR by passing a filename that contains a distribution of the relevant host param
 
 HOST_PARAM_DIST_FILE: host_mass_distribution.txt
 
-SN Effects
+SN Perturbers
 ==========
 
-These are exactly the same as host effects, with different labels. To create a SN effect, follow
-the same directions listed for the HOST effect, but replace "HOST" with "SN" in each variable name. 
+These are exactly the same as host perturbers, with different labels. To create a SN perturber, follow
+the same directions listed for the HOST perturber, but replace "HOST" with "SN" in each variable name. 
 
 
-Creating Effects in the Params File
+Creating Perturbers in the Params File
 ===================================
 
-You must now define a section for each warping effect, with these variables. For our current example,
-where I have defined host_mass and stretch effects in my **[FLAGS]** section, I must define these two
+You must now define a section for each warping perturber, with these variables. For our current example,
+where I have defined host_mass and stretch perturbers in my **[FLAGS]** section, I must define these two
 sections. If I do not define a **[FLAGS]** section, then whatever sections that exist apart from
-the **[MAIN]** section are assumed to be warping effects. One such section might look like the
+the **[MAIN]** section are assumed to be warping perturbers. One such section might look like the
 following:
 
 
@@ -181,7 +181,7 @@ All together, after adding in the HOST_MASS section as well, a **BYOSED.params**
 	SCALE_DIST_LIMITS: -2.5 2.5
 
 Or, if you do not define a flags section, host_mass and stretch will automatically be used as 
-warping effects with the following **BYOSED.params** file:
+warping perturbers with the following **BYOSED.params** file:
 
 ::
 
@@ -216,8 +216,8 @@ Final Notes
 ===========
 
 Now you can replace the Hsiao template with your own template SED, and start adding in warping
-effects. This warping process is designed so that as many effects as you would like can be
-included. Each effect is applied multiplicatively to the baseline model. For the example file 
+perturbers. This warping process is designed so that as many perturbers as you would like can be
+included. Each perturber is applied multiplicatively to the baseline model. For the example file 
 above, the final flux would look like this 
 
 .. math::
@@ -228,19 +228,19 @@ Where here F is the final flux, H is the Hsiao template, S is the defined stretc
 M is the defined host mass function, s is the scale parameter pulled from the distribution defined
 for the stretch function, m is the scale parameter pulled from the distribution defined 
 for the host mass function, and M is the host mass itself, pulled from the parameter 
-distribution defined for the host mass effect. 
-In principle this could look like the following if you had N such effects:
+distribution defined for the host mass perturber. 
+In principle this could look like the following if you had N such perturbers:
 
 .. math::
 
    F(\lambda,\phi)=A\times H(\lambda,\phi)\Big[1+X_1(\lambda,\phi)x_1+X_2(\lambda,\phi)x_2+...+X_N(\lambda,\phi)x_N\Big]
 
 
-Combining HOST and SN Effects
+Combining HOST and SN Perturbers
 =============================
 
-You can also define an effect that involves both HOST and SN parameters. Perhaps you want an effect that combines host mass
-and velocity. You might then have a params file that looks like this (the entire effect still only gets one scale parameter):
+You can also define an perturber that involves both HOST and SN parameters. Perhaps you want an perturber that combines host mass
+and velocity. You might then have a params file that looks like this (the entire perturber still only gets one scale parameter):
 
 ::
 
@@ -273,9 +273,9 @@ In this case, the final flux would be calculated in the following way:
 
    F(\lambda,\phi)=A\times H(\lambda,\phi)\Big[1+V(\lambda,\phi,v)sM(\lambda,\phi,M)\Big]
 
-Where here F is the final flux, H is the Hsiao template, V is the velocity component of the HOST_MASS_VELOCITY effect,
-s is the scale factor, and M is the host mass component of the HOST_MASS_VELOCITY effect. This generalizes to N such
-effects in the following way:
+Where here F is the final flux, H is the Hsiao template, V is the velocity component of the HOST_MASS_VELOCITY perturber,
+s is the scale factor, and M is the host mass component of the HOST_MASS_VELOCITY perturber. This generalizes to N such
+perturbers in the following way:
 
 .. math::
 	

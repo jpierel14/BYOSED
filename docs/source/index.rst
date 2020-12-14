@@ -15,7 +15,7 @@ distance measure-ments using any baseline SED model in an open source Python fra
 
    install
    simulation
-   
+   contributors
 
 Indices and tables
 ==================
