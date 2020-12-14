@@ -1,7 +1,7 @@
 import numpy as np
 import sncosmo
 
-from .perturber_io import generate_ND_grids,line_prepender
+from .effectio import generate_ND_grids,line_prepender
 
 __all__ = ['WarpModel','sed_to_effect','residual_to_effect']
 

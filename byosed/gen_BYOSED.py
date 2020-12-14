@@ -5,9 +5,9 @@ import os, optparse, configparser, sys, sncosmo
 from scipy.interpolate import interp2d
 from copy import copy
 
-from .effectio import *
+from .perturber_io import *
 from .distributions import *
-from .effects import *
+from .perturbers import *
 
 if not hasattr(sys, 'argv'):
 		sys.argv  = ['']
@@ -371,7 +371,7 @@ T')
 			return self.sn_effects[varname].warp_parameter
 		else:
 			return self.host_effects[varname].warp_parameter
-			
+
 	def fetchParNames_CONFIG(self,config):
 		if 'FLAGS' in config.sections():
 			return([k.upper() for k in list(config['FLAGS'].keys()) if config['FLAGS'][k]=='True'])
