@@ -1,6 +1,6 @@
 from .gen_BYOSED import *
-from .effects import *
-from .effectio import *
+from .perturbers import *
+from .perturber_io import *
 
 def test(package=None, test_path=None, args=None, plugins=None,
          verbose=False, pastebin=None, remote_data=False, pep8=False,

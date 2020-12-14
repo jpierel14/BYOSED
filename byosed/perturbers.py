@@ -1,18 +1,18 @@
 import numpy as np
 import sncosmo
 
-from .effectio import generate_ND_grids,line_prepender
+from .perturber_io import generate_ND_grids,line_prepender
 
-__all__ = ['WarpModel','sed_to_effect','residual_to_effect']
+__all__ = ['WarpModel','sed_to_perturber']
 
-def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',rescale=True,outname='my_effect.dat',
-                  phase_wave_source='effect',diff_limit=np.inf,ave_spec=None):
-    if isinstance(effect_in,dict):
-        effect_dict=effect_in
-        out_effect_dict={e:{} for e in effect_in.keys()}
+def sed_to_perturber(perturber_in,base_sed,perturber_var='Theta',scale_band='bessellb',rescale=True,outname='my_perturber.dat',
+                  phase_wave_source='perturber',diff_limit=np.inf,ave_spec=None):
+    if isinstance(perturber_in,dict):
+        perturber_dict=perturber_in
+        out_perturber_dict={e:{} for e in perturber_in.keys()}
         single=False
     else:
-        effect_dict={'single':effect_in}
+        perturber_dict={'single':perturber_in}
         single=True
 
     base_phase=base_sed._phase
@@ -22,56 +22,56 @@ def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',re
     overall_max_phase=np.inf
     overall_max_wave=np.inf
     overall_min_wave=-np.inf
-    for e in effect_dict.keys():
+    for e in perturber_dict.keys():
         
-        effect_sed=effect_dict[e]
-        effect_phase=effect_sed._phase
-        effect_wave=effect_sed._wave
-        if np.min(effect_wave)>overall_min_wave:
-            overall_min_wave=np.min(effect_wave)
-        if np.max(effect_wave)<overall_max_wave:
-            overall_max_wave=np.max(effect_wave)
-        if np.min(effect_phase)>overall_min_phase:
-            overall_min_phase=np.min(effect_phase)
-        if np.max(effect_phase)<overall_max_phase:
-            overall_max_phase=np.max(effect_phase)
+        perturber_sed=perturber_dict[e]
+        perturber_phase=perturber_sed._phase
+        perturber_wave=perturber_sed._wave
+        if np.min(perturber_wave)>overall_min_wave:
+            overall_min_wave=np.min(perturber_wave)
+        if np.max(perturber_wave)<overall_max_wave:
+            overall_max_wave=np.max(perturber_wave)
+        if np.min(perturber_phase)>overall_min_phase:
+            overall_min_phase=np.min(perturber_phase)
+        if np.max(perturber_phase)<overall_max_phase:
+            overall_max_phase=np.max(perturber_phase)
 
         fluxes=[]
         for phase in base_phase:
             base_flux=base_sed._flux(phase,base_wave).flatten()
-            if phase>=np.min(effect_phase) and phase<=np.max(effect_phase):# and ((e=='single' or float(e)<10.7001) or effect_var!='hostmass'):
-                scale_factor=effect_sed.bandflux(scale_band,phase)/base_sed.bandflux(scale_band,phase)
+            if phase>=np.min(perturber_phase) and phase<=np.max(perturber_phase):# and ((e=='single' or float(e)<10.7001) or perturber_var!='hostmass'):
+                scale_factor=perturber_sed.bandflux(scale_band,phase)/base_sed.bandflux(scale_band,phase)
 
                 try:
-                    effect_flux=effect_sed._flux(phase,base_wave).flatten()
+                    perturber_flux=perturber_sed._flux(phase,base_wave).flatten()
                 except:
-                    effect_flux=base_sed._flux(phase,base_wave)#/np.max(base_sed._flux(phase,base_wave))#np.zeros(len(base_wave))
-                    inds=base_wave[np.where(np.logical_and(base_wave>=np.min(effect_wave),
-                                                             base_wave<=np.max(effect_wave)))[0]]
-                    effect_flux[inds]=effect_sed._flux(phase,base_wave[inds])
+                    perturber_flux=base_sed._flux(phase,base_wave)#/np.max(base_sed._flux(phase,base_wave))#np.zeros(len(base_wave))
+                    inds=base_wave[np.where(np.logical_and(base_wave>=np.min(perturber_wave),
+                                                             base_wave<=np.max(perturber_wave)))[0]]
+                    perturber_flux[inds]=perturber_sed._flux(phase,base_wave[inds])
                 if not rescale:
                     scale_factor=1.
-                effect_flux/=scale_factor
+                perturber_flux/=scale_factor
                 if ave_spec is None:
-                    effect_flux=(effect_flux-base_flux)/base_flux
+                    perturber_flux=(perturber_flux-base_flux)/base_flux
                 else:
-                    effect_flux=(effect_flux-ave_spec._flux(phase,base_wave).flatten())/base_flux
+                    perturber_flux=(perturber_flux-ave_spec._flux(phase,base_wave).flatten())/base_flux
 
-                effect_flux[np.abs(effect_flux)==np.inf]=np.nan
-                effect_flux[np.abs(effect_flux)>diff_limit]=np.nan
-                if np.isnan(effect_flux[0]):
-                    effect_flux[0]=0
-                for i in range(1,len(effect_flux)):
-                    if np.isnan(effect_flux[i]):
-                        effect_flux[i]=effect_flux[i-1]
+                perturber_flux[np.abs(perturber_flux)==np.inf]=np.nan
+                perturber_flux[np.abs(perturber_flux)>diff_limit]=np.nan
+                if np.isnan(perturber_flux[0]):
+                    perturber_flux[0]=0
+                for i in range(1,len(perturber_flux)):
+                    if np.isnan(perturber_flux[i]):
+                        perturber_flux[i]=perturber_flux[i-1]
             else:
-                effect_wave=base_wave
-                effect_flux=np.zeros(len(base_wave))
+                perturber_wave=base_wave
+                perturber_flux=np.zeros(len(base_wave))
 
             if not single:
-                out_effect_dict[e][phase]={base_wave[i]:effect_flux[i] for i in range(len(base_wave))}
+                out_perturber_dict[e][phase]={base_wave[i]:perturber_flux[i] for i in range(len(base_wave))}
             else:
-                fluxes.append(effect_flux)
+                fluxes.append(perturber_flux)
 
     accept_phase_inds=np.where(np.logical_and(base_phase>=overall_min_phase,base_phase<=overall_max_phase))[0]
     accept_wave_inds=np.where(np.logical_and(base_wave>=overall_min_wave,base_wave<=overall_max_wave))[0]
@@ -91,10 +91,10 @@ def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',re
         base_phase=base_phase[accept_phase_inds].astype(int)
         base_wave=base_wave[accept_wave_inds].astype(int)
         def func(velocity,phase,wavelength):
-            flux=np.array([out_effect_dict[v][p][w] for v,p,w in zip(velocity,phase,wavelength)])
+            flux=np.array([out_perturber_dict[v][p][w] for v,p,w in zip(velocity,phase,wavelength)])
             return flux
-        generate_ND_grids(func,outname,[effect_var,'phase','wavelength','flux'],
-                          np.sort(list(out_effect_dict.keys())),base_phase,base_wave)
+        generate_ND_grids(func,outname,[perturber_var,'phase','wavelength','flux'],
+                          np.sort(list(out_perturber_dict.keys())),base_phase,base_wave)
 
 class WarpModel(object):
     """Base class for anything with parameters.
@@ -120,11 +120,11 @@ class WarpModel(object):
         self.warp_parameter=param_value
 
     def updateWarp_Param(self,z=None):
-    if self.warp_distribution is not None:
+        if self.warp_distribution is not None:
             self.warp_parameter=self.warp_distribution(z)
 
-        if self.name in self._param_names:
-            self.set(**{self.name:self.warp_parameter})
+            if self.name in self._param_names:
+                self.set(**{self.name:self.warp_parameter})
 
     def updateScale_Param(self,z=None):
         self.scale_parameter=self.scale_distribution(z)
@@ -195,7 +195,7 @@ class WarpModel(object):
         parameter_lines = [self._headsummary(), 'parameters:']
         if len(self._param_names) > 0:
             m = max(map(len, self._param_names))
-            extralines = ['	 ' + k.ljust(m) + ' = ' + repr(v)
+            extralines = ['  ' + k.ljust(m) + ' = ' + repr(v)
                           for k, v in zip(self._param_names, self._parameters)]
             parameter_lines.extend(extralines)
         return '\n'.join(parameter_lines)

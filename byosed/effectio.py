@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 __all__ = ['generate_ND_grids','read_ND_grids','kaepora_to_sed']
 
-def kaepora_to_sed(data_folder,perturber_keys,base_sed='hsiao',minWave=0,maxWave=np.inf,minPhase=-np.inf,
+def kaepora_to_sed(data_folder,effect_keys,base_sed='hsiao',minWave=0,maxWave=np.inf,minPhase=-np.inf,
                    maxPhase=np.inf,waveStep=10,scale_band='bessellb'):
     waves={}
     trans={}
@@ -28,7 +28,7 @@ def kaepora_to_sed(data_folder,perturber_keys,base_sed='hsiao',minWave=0,maxWave
     base_sed_wave=base_sed._source._wave
 
     filelists=[]
-    for k in perturber_keys:
+    for k in effect_keys:
         filelists.append(glob.glob(os.path.join(data_folder,'*%s*'%k)))
 
     seds={}
@@ -37,7 +37,7 @@ def kaepora_to_sed(data_folder,perturber_keys,base_sed='hsiao',minWave=0,maxWave
     scale_factors={}
     for i in range(len(filelists)):
         filelist=filelists[i]
-        temp_key=perturber_keys[i]
+        temp_key=effect_keys[i]
         temp_phase=[]
         
         j=0
@@ -77,9 +77,9 @@ def kaepora_to_sed(data_folder,perturber_keys,base_sed='hsiao',minWave=0,maxWave
         
     final_wavelength=np.arange(base_sed_wave[0],base_sed_wave[-1]+waveStep/10,waveStep)
     to_save={}
-    for j in range(len(perturber_keys)):
+    for j in range(len(effect_keys)):
         
-        temp_phase=np.array(phase_lists[perturber_keys[j]])
+        temp_phase=np.array(phase_lists[effect_keys[j]])
         bound_inds=np.where(np.logical_and(temp_phase>=minPhase,temp_phase<=maxPhase))[0]
         final_phase=np.sort(temp_phase[bound_inds])
         pair_list=np.array(list(phase_pairs.keys()))
@@ -98,7 +98,7 @@ def kaepora_to_sed(data_folder,perturber_keys,base_sed='hsiao',minWave=0,maxWave
                 else:
                     temp[w]=scaled_flux(final_wavelength[w])
             final_flux.append(temp)
-        seds[perturber_keys[j]]=[np.sort(final_phase),final_wavelength,sncosmo.TimeSeriesSource(final_phase,final_wavelength,
+        seds[effect_keys[j]]=[np.sort(final_phase),final_wavelength,sncosmo.TimeSeriesSource(final_phase,final_wavelength,
                                                               np.array(final_flux))]
      
     return(seds)
@@ -133,7 +133,7 @@ def _get_kaepora_scale(kinterp,bsed,waves,trans,dwaves,phase):
     return final_scale
 
 def _meshgrid2(*arrs):
-    arrs = tuple(arrs)  #edit
+    arrs = tuple(arrs)	#edit
     lens = list(map(len, arrs))
     dim = len(arrs)
 
