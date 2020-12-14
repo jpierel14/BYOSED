@@ -66,6 +66,8 @@ class GeneralSED:
 
 		fluxarr = flux.reshape([len(np.unique(phase)),len(np.unique(wave))])
 		self.norm =float(config['MAIN']['NORM']) if 'NORM' in config['MAIN'].keys() else -19.365
+		self.alpha =float(config['MAIN']['ALPHA']) if 'ALPHA' in config['MAIN'].keys() else 0.14
+		self.beta =float(config['MAIN']['BETA']) if 'BETA' in config['MAIN'].keys() else 3.1
 
 		#self.x0=10**(.4*19.365)
 		self.x0=10**(-.4*self.norm)
@@ -313,7 +315,6 @@ class GeneralSED:
 						else:
 							outer_scale_param*=self.sn_effects[warp].scale_parameter
 
-
 				#if warp in self.sn_effects[warp]._param_names:
 				#	temp_warp_param=1.
 				#else:
@@ -330,7 +331,7 @@ class GeneralSED:
 						else:
 							temp_scale_param*=self.host_effects[warp].scale_parameter
 						product*=self.host_effects[warp].flux(trest_arr,self.wave,hostpars,self.host_param_names)
-						temp_scale_param*=self.host_effects[warp].scale_parameter
+						
 					else:
 						temp_outer_product*=self.host_effects[warp].flux(trest_arr,self.wave,hostpars,self.host_param_names)
 						if outer_scale_param==0:
@@ -338,22 +339,33 @@ class GeneralSED:
 						else:
 							outer_scale_param*=self.host_effects[warp].scale_parameter
 						outer_scale_param*=self.host_effects[warp].scale_parameter
+	
 				inner_product+=product*temp_scale_param
+
 				outer_product+=temp_outer_product*outer_scale_param
 
 			except Exception as e:
 				print('Python Error :',e)
 
 
-
-
-
+		
 		fluxsmear*=((1+inner_product)*10**(-0.4*outer_product))
 
-
-
+		fluxsmear*=self.brightness_correct_Ia()
 
 		return list(fluxsmear)
+		
+	def brightness_correct_Ia(self):
+		if 'COLOR' in self.sn_effects.keys():
+			c=self.sn_effects['COLOR'].scale_parameter
+		else:
+			c=0
+		if 'STRETCH' in self.sn_effects.keys():
+			s=self.sn_effects['STRETCH'].scale_parameter
+		else:
+			s=0
+
+		return(10**(-.4*(self.beta*c-self.alpha*s)))
 
 	def warp_SED(self,trest=None,hostpars=None):
 		if trest is None:

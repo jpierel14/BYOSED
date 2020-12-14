@@ -1,6 +1,6 @@
 [MAIN]
 
-SED_FILE: Hsiao07.dat
+SED_FILE: mangled_hsiao.dat
 MAGSMEAR: 0.0
 MAGOFF: 0.0
 
@@ -10,12 +10,12 @@ MAGOFF: 0.0
 
 [FLAGS]
 
-COLOR: False
-STRETCH: False
-VELOCITY: False
-SFR: True
+COLOR: True
+STRETCH: True
+VELOCITY: True
+SFR: False
 METALLICITY: False
-HOST_MASS: False
+HOSTMASS: True
 
 [SFR]
 
@@ -32,7 +32,7 @@ SCALE_DIST_PEAK: 1
 SCALE_DIST_SIGMA: .000001 .000001
 SCALE_DIST_LIMITS: .99999 1.00001
 
-[HOST_MASS]
+[HOSTMASS]
 
 HOST_FUNCTION: gridded_hostmass_hsiao.dat
 host_param_dist_file= mass_dist.dat

@@ -6,7 +6,7 @@ from .effectio import generate_ND_grids,line_prepender
 __all__ = ['WarpModel','sed_to_effect','residual_to_effect']
 
 def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',rescale=True,outname='my_effect.dat',
-                  phase_wave_source='effect',diff_limit=100):
+                  phase_wave_source='effect',diff_limit=np.inf,ave_spec=None):
     if isinstance(effect_in,dict):
         effect_dict=effect_in
         out_effect_dict={e:{} for e in effect_in.keys()}
@@ -17,12 +17,30 @@ def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',re
 
     base_phase=base_sed._phase
     base_wave=base_sed._wave
-
+    if len(effect_dict)>1 and False:
+    
+        import matplotlib.pyplot as plt
+        # print(effect_dict.keys())
+        # plt.plot(base_wave,effect_dict[list(effect_dict.keys())[1]]._flux(15,base_wave).flatten(),label='low')
+        # plt.plot(base_wave,effect_dict[list(effect_dict.keys())[2]]._flux(15,base_wave).flatten(),label='high')
+        # plt.plot(base_wave,base_sed._flux(15,base_wave).flatten(),label='base')
+        # plt.xlim((3000,7000))
+        # plt.legend()
+        print(effect_dict.keys())
+        plt.close()
+        plt.plot(base_phase,sncosmo.Model(effect_dict[list(effect_dict.keys())[1]]).bandflux('bessellb',base_phase).flatten(),label='low')
+        plt.plot(base_phase,sncosmo.Model(effect_dict[list(effect_dict.keys())[2]]).bandflux('bessellb',base_phase).flatten(),label='high')
+        #plt.plot(base_wave,base_sed._flux(15,base_wave).flatten(),label='base')
+        #plt.xlim((3000,7000))
+        plt.legend()
+        plt.show()
+    
     overall_min_phase=-np.inf
     overall_max_phase=np.inf
     overall_max_wave=np.inf
     overall_min_wave=-np.inf
     for e in effect_dict.keys():
+        
         effect_sed=effect_dict[e]
         effect_phase=effect_sed._phase
         effect_wave=effect_sed._wave
@@ -42,23 +60,40 @@ def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',re
         fluxes=[]
         for phase in base_phase:
             base_flux=base_sed._flux(phase,base_wave).flatten()
-            if phase>=np.min(effect_phase) and phase<=np.max(effect_phase):
+            #base_flux/=np.max(base_flux)
+            if phase>=np.min(effect_phase) and phase<=np.max(effect_phase):# and ((e=='single' or float(e)<10.7001) or effect_var!='hostmass'):
                 scale_factor=effect_sed.bandflux(scale_band,phase)/base_sed.bandflux(scale_band,phase)
 
                 try:
                     effect_flux=effect_sed._flux(phase,base_wave).flatten()
                 except:
-                    effect_flux=np.zeros(len(base_wave))
+                    effect_flux=base_sed._flux(phase,base_wave)#/np.max(base_sed._flux(phase,base_wave))#np.zeros(len(base_wave))
                     inds=base_wave[np.where(np.logical_and(base_wave>=np.min(effect_wave),
                                                              base_wave<=np.max(effect_wave)))[0]]
                     effect_flux[inds]=effect_sed._flux(phase,base_wave[inds])
+                #print(effect_var,np.nanmax(effect_flux),np.nanmax(base_flux))
                 if not rescale:
                     scale_factor=1.
                 effect_flux/=scale_factor
-                effect_flux=(effect_flux-base_flux)/base_flux
-                effect_flux[np.abs(effect_flux)==np.inf]=0.
-                effect_flux[np.isnan(effect_flux)]=0.
-                effect_flux[np.abs(effect_flux)>diff_limit]=0.
+                if ave_spec is None:
+                    effect_flux=(effect_flux-base_flux)/base_flux
+                else:
+                    effect_flux=(effect_flux-ave_spec._flux(phase,base_wave).flatten())/base_flux
+
+                if effect_var=='velocity' and phase>-1 and phase<1 and True:
+                    import matplotlib.pyplot as plt
+                    print(phase)
+                    plt.plot(effect_wave,effect_flux*base_flux)
+                    plt.xlim((3600,8600))
+                    #plt.ylim((-1,1))
+                    plt.show()
+                effect_flux[np.abs(effect_flux)==np.inf]=np.nan
+                effect_flux[np.abs(effect_flux)>diff_limit]=np.nan
+                if np.isnan(effect_flux[0]):
+                    effect_flux[0]=0
+                for i in range(1,len(effect_flux)):
+                    if np.isnan(effect_flux[i]):
+                        effect_flux[i]=effect_flux[i-1]
             else:
                 effect_wave=base_wave
                 effect_flux=np.zeros(len(base_wave))
@@ -79,6 +114,7 @@ def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',re
         base_wave=base_wave[accept_wave_inds].astype(int)
         fluxes=fluxes[np.ix_(accept_phase_inds,accept_wave_inds)]
         sncosmo.write_griddata_ascii(base_phase,base_wave,fluxes,outname)
+
         line_prepender(outname,'# phase wavelength flux')
 
     else:
@@ -113,7 +149,9 @@ class WarpModel(object):
         self.scale_type=scale_type
 
     def setWarp_Param(self,param_name,param_value):
+        
         self.set(**{param_name:param_value})
+        self.warp_parameter=param_value
 
     def updateWarp_Param(self):
         if self.warp_distribution is not None:
