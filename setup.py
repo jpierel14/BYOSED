@@ -20,19 +20,37 @@ VERSION = '0.0.1'
 LICENSE = 'BSD'
 URL = 'byosed.readthedocs.org'
 
+def recursive_glob(basedir, pattern):
+    matches = []
+    for root, dirnames, filenames in os.walk(basedir):
+        for filename in fnmatch.filter(filenames, pattern):
+            matches.append(os.path.join(root, filename))
+    return matches
+
+PACKAGENAME='sntd'
+# Add the project-global data
+pkgdatadir = os.path.join(PACKAGENAME, 'kaepora')
+initfiles = os.path.join(PACKAGENAME, 'initfiles')
+
+data_files = []
+data_files.extend(recursive_glob(pkgdatadir, '*'))
+data_files.extend(recursive_glob(initfiles, '*'))
+
+
+data_files = [f[len(PACKAGENAME)+1:] for f in data_files]
 
 setup(
 	name='BYOSED',
 	version=VERSION,
 	cmdclass={'test': BYOSEDTest},
 	packages=['byosed'],
-	package_data={'': ['initfiles/*.dat','initfiles/*.params']},
+        package_data={'sntd':data_files},
 	include_package_data=True,
 	author=AUTHOR,
 	author_email=AUTHOR_EMAIL,
 	license=LICENSE,
 	long_description=open('README.md').read(),
-    include_dirs=numpy.distutils.misc_util.get_numpy_include_dirs(),
+        include_dirs=numpy.distutils.misc_util.get_numpy_include_dirs(),
 	install_requires=['numpy>=1.5.0',
 					  'scipy>=0.9.0',
 					  'astropy',
