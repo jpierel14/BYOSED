@@ -45,7 +45,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
-    'sphinx_gallery.gen_gallery',
+    #'sphinx_gallery.gen_gallery',
     'sphinx.ext.autosectionlabel'
 ]
 autosectionlabel_prefix_document = True
@@ -97,17 +97,17 @@ html_theme_options = {
     # Collapse navigation (False makes it tree-like)
     "collapse_navigation": False,
 }
-sphinx_gallery_conf = {
-    'examples_dirs': '_examples',  # path to examples scripts
-    'gallery_dirs': 'examples',   # path to gallery generated examples
-    'backreferences_dir': 'modules/generated',  # path to store the module
-                                             # using example template
-    'doc_module': ('byosed',),  # documented module(s)
-    'download_section_examples': False,
-    'download_all_examples': False,  # don't package up examples.
+#sphinx_gallery_conf = {
+#    'examples_dirs': '_examples',  # path to examples scripts
+#    'gallery_dirs': 'examples',   # path to gallery generated examples
+#    'backreferences_dir': 'modules/generated',  # path to store the module
+#                                             # using example template
+#    'doc_module': ('byosed',),  # documented module(s)
+#    'download_section_examples': False,
+#    'download_all_examples': False,  # don't package up examples.
     #'default_thumb_file': os.path.join(os.path.dirname(__file__), '_logo',
     #                                   'spectral_white_bkg.png')
-}
+#}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
