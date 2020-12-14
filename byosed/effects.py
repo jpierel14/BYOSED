@@ -17,23 +17,6 @@ def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',re
 
     base_phase=base_sed._phase
     base_wave=base_sed._wave
-    if len(effect_dict)>1 and False:
-    
-        import matplotlib.pyplot as plt
-        # print(effect_dict.keys())
-        # plt.plot(base_wave,effect_dict[list(effect_dict.keys())[1]]._flux(15,base_wave).flatten(),label='low')
-        # plt.plot(base_wave,effect_dict[list(effect_dict.keys())[2]]._flux(15,base_wave).flatten(),label='high')
-        # plt.plot(base_wave,base_sed._flux(15,base_wave).flatten(),label='base')
-        # plt.xlim((3000,7000))
-        # plt.legend()
-        print(effect_dict.keys())
-        plt.close()
-        plt.plot(base_phase,sncosmo.Model(effect_dict[list(effect_dict.keys())[1]]).bandflux('bessellb',base_phase).flatten(),label='low')
-        plt.plot(base_phase,sncosmo.Model(effect_dict[list(effect_dict.keys())[2]]).bandflux('bessellb',base_phase).flatten(),label='high')
-        #plt.plot(base_wave,base_sed._flux(15,base_wave).flatten(),label='base')
-        #plt.xlim((3000,7000))
-        plt.legend()
-        plt.show()
     
     overall_min_phase=-np.inf
     overall_max_phase=np.inf
@@ -53,14 +36,9 @@ def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',re
         if np.max(effect_phase)<overall_max_phase:
             overall_max_phase=np.max(effect_phase)
 
-        #if phase_wave_source=='effect':
-        #    base_phase=effect_sed._phase
-        #    base_wave=effect_sed._wave
-
         fluxes=[]
         for phase in base_phase:
             base_flux=base_sed._flux(phase,base_wave).flatten()
-            #base_flux/=np.max(base_flux)
             if phase>=np.min(effect_phase) and phase<=np.max(effect_phase):# and ((e=='single' or float(e)<10.7001) or effect_var!='hostmass'):
                 scale_factor=effect_sed.bandflux(scale_band,phase)/base_sed.bandflux(scale_band,phase)
 
@@ -71,7 +49,6 @@ def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',re
                     inds=base_wave[np.where(np.logical_and(base_wave>=np.min(effect_wave),
                                                              base_wave<=np.max(effect_wave)))[0]]
                     effect_flux[inds]=effect_sed._flux(phase,base_wave[inds])
-                #print(effect_var,np.nanmax(effect_flux),np.nanmax(base_flux))
                 if not rescale:
                     scale_factor=1.
                 effect_flux/=scale_factor
@@ -80,13 +57,6 @@ def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',re
                 else:
                     effect_flux=(effect_flux-ave_spec._flux(phase,base_wave).flatten())/base_flux
 
-                if effect_var=='velocity' and phase>-1 and phase<1 and True:
-                    import matplotlib.pyplot as plt
-                    print(phase)
-                    plt.plot(effect_wave,effect_flux*base_flux)
-                    plt.xlim((3600,8600))
-                    #plt.ylim((-1,1))
-                    plt.show()
                 effect_flux[np.abs(effect_flux)==np.inf]=np.nan
                 effect_flux[np.abs(effect_flux)>diff_limit]=np.nan
                 if np.isnan(effect_flux[0]):
@@ -125,15 +95,11 @@ def sed_to_effect(effect_in,base_sed,effect_var='Theta',scale_band='bessellb',re
             return flux
         generate_ND_grids(func,outname,[effect_var,'phase','wavelength','flux'],
                           np.sort(list(out_effect_dict.keys())),base_phase,base_wave)
-        #line_prepender(outname,'# %s phase wavelength flux'%effect_var)
-
-def residual_to_effect():
-    pass
 
 class WarpModel(object):
     """Base class for anything with parameters.
     Derived classes must have properties ``_param_names`` (list of str)
-    and ``_parameters`` (1-d numpy.ndarray).
+    and ``_parameters`` (1-d numpy.ndarray). Adapted from SNCosmo.
     """
 
     def __init__(self, warp_function,parameters,param_names,warp_parameter,warp_distribution,
@@ -153,24 +119,24 @@ class WarpModel(object):
         self.set(**{param_name:param_value})
         self.warp_parameter=param_value
 
-    def updateWarp_Param(self):
-        if self.warp_distribution is not None:
-            self.warp_parameter=self.warp_distribution()[0]
-            if self.name in self._param_names:
-                self.set(**{self.name:self.warp_parameter})
+    def updateWarp_Param(self,z=None):
+    if self.warp_distribution is not None:
+            self.warp_parameter=self.warp_distribution(z)
 
-    #else:
-    #	print("Cannot update warping param, no distribution.")
+        if self.name in self._param_names:
+            self.set(**{self.name:self.warp_parameter})
 
-    def updateScale_Param(self):
-        self.scale_parameter=self.scale_distribution()[0]
+    def updateScale_Param(self,z=None):
+        self.scale_parameter=self.scale_distribution(z)
 
 
     def flux(self,phase,wave,host_params,host_param_names):
         phase_wave_dict={'PHASE':phase,'WAVELENGTH':wave}
         self.set(**{p:host_params[host_param_names.index(p)] for p in self._param_names if p in host_param_names})
+
         parameter_arrays=[np.ones(len(wave))*self._parameters[i] if self._param_names[i] not in ['PHASE','WAVELENGTH']
-                          else phase_wave_dict[self._param_names[i]] for i in range(len(self._param_names))]
+                            else phase_wave_dict[self._param_names[i]] for i in range(len(self._param_names))]
+
         return(self.warp_function(np.vstack(parameter_arrays).T).flatten())
 
     @property
@@ -196,8 +162,13 @@ class WarpModel(object):
 
     def update(self, param_dict):
         """Set parameters of the model from a dictionary."""
-        for key, value in param_dict.items():
-            self[key] = value
+        temp_ps=[]
+        for i in range(len(self._param_names)):
+            if self._param_names[i] in param_dict.keys():
+                temp_ps.append(param_dict[self._param_names[i]])
+            else:
+                temp_ps.append(self._parameters[i])
+        self._parameters[:]=temp_ps
 
     def __setitem__(self, key, value):
         """Set a single parameter of the model by name."""
