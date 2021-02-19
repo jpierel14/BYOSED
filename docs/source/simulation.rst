@@ -1,6 +1,12 @@
-***********************
+*****************
+SNANA Integration
+*****************
+
+BYOSED is integrated into the public version of SNANA at this time. Details can be found in Section 9 of the `SNANA manual <https://github.com/RickKessler/SNANA/blob/master/doc/snana_manual.pdf>`_. The code will look for the byosed.params file in your specified directory, which is described below.
+
+**********************
 Simulating with BYOSED
-***********************
+**********************
 
 
 The BYOSED framework allows any spectrophotometric model to be used
@@ -63,7 +69,7 @@ and some host mass and stretch perturbers are applied as well based on functions
 define in the next sections. 
 
 Warping Perturbers
-===============
+==================
 
 The following sections contain all of the various wavelength/phase dependent perturbers that you want
 to apply to your SED. In this case, based on the **[FLAGS]** section, you must have a "HOST_MASS" section
@@ -80,7 +86,7 @@ defined:
   	* The lower and upper cutoff you would like for the same distribution 
 
 HOST Perturbers
-============
+===============
 
 Creating a HOST warping perturber section requires the following
 variable:
@@ -116,14 +122,14 @@ OR by passing a filename that contains a distribution of the relevant host param
 HOST_PARAM_DIST_FILE: host_mass_distribution.txt
 
 SN Perturbers
-==========
+=============
 
 These are exactly the same as host perturbers, with different labels. To create a SN perturber, follow
 the same directions listed for the HOST perturber, but replace "HOST" with "SN" in each variable name. 
 
 
 Creating Perturbers in the Params File
-===================================
+======================================
 
 You must now define a section for each warping perturber, with these variables. For our current example,
 where I have defined host_mass and stretch perturbers in my **[FLAGS]** section, I must define these two
@@ -165,8 +171,8 @@ All together, after adding in the HOST_MASS section as well, a **BYOSED.params**
 	HOST_FUNCTION: host_mass_func.dat
 
 	SCALE_DIST_PEAK: 1
-	SCALE_DIST_SIGMA: .000001 .000001
-	SCALE_DIST_LIMITS: .99999 1.00001
+	SCALE_DIST_SIGMA: 0 0
+	SCALE_DIST_LIMITS: 1 1
 
 	HOST_PARAM_DIST_PEAK: 10
 	HOST_PARAM_DIST_SIGMA: 2 2
@@ -196,8 +202,8 @@ warping perturbers with the following **BYOSED.params** file:
 	HOST_FUNCTION: host_mass_func.dat
 
 	SCALE_DIST_PEAK: 1
-	SCALE_DIST_SIGMA: .000001 .000001
-	SCALE_DIST_LIMITS: .99999 1.00001
+	SCALE_DIST_SIGMA: 0 0
+	SCALE_DIST_LIMITS: 1 1
 
 	HOST_PARAM_DIST_PEAK: 10
 	HOST_PARAM_DIST_SIGMA: 2 2
@@ -237,7 +243,7 @@ In principle this could look like the following if you had N such perturbers:
 
 
 Combining HOST and SN Perturbers
-=============================
+================================
 
 You can also define an perturber that involves both HOST and SN parameters. Perhaps you want an perturber that combines host mass
 and velocity. You might then have a params file that looks like this (the entire perturber still only gets one scale parameter):
@@ -255,8 +261,8 @@ and velocity. You might then have a params file that looks like this (the entire
 	HOST_FUNCTION: host_mass_func.dat
 
 	SCALE_DIST_PEAK: 1
-	SCALE_DIST_SIGMA: .000001 .000001
-	SCALE_DIST_LIMITS: .99999 1.00001
+	SCALE_DIST_SIGMA: 0 0
+	SCALE_DIST_LIMITS: 1 1
 
 	HOST_PARAM_DIST_PEAK: 10
 	HOST_PARAM_DIST_SIGMA: 2 2
@@ -288,6 +294,7 @@ Example Files
 
 These are example files that can be used for your :download:`sed_file <./example_files/Hsiao07.dat>` and :download:`BYOSED.params <./example_files/BYOSED.params>`.
 The host mass and stretch functions are defined by accompanying :download:`host mass <./example_files/gridded_mass.dat>` and :download:`stretch <./example_files/stretch_func.dat>` files.
+
 
 
 

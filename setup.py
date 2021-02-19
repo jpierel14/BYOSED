@@ -17,7 +17,7 @@ class BYOSEDTest(TestCommand):
 
 AUTHOR = 'Justin Pierel'
 AUTHOR_EMAIL = 'jr23@email.sc.edu'
-VERSION = '0.0.2'
+VERSION = '0.0.3'
 LICENSE = 'BSD'
 URL = 'byosed.readthedocs.org'
 

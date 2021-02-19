@@ -1,6 +1,6 @@
-******************************
-BYOSED (**Under Development**)
-******************************
+****************************************************
+Build Your Own Spectral Energy Distribution (BYOSED)
+****************************************************
 
 
 Overview
@@ -15,6 +15,7 @@ distance measure-ments using any baseline SED model in an open source Python fra
 
    install
    simulation
+   publications
    contributors
 
 Indices and tables
